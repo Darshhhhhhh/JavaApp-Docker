@@ -1,0 +1,58 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_REPO = 'darshan992/javaappdocker'
+        IMAGE_TAG = "latest"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git url: 'https://github.com/Darshhhhhhh/JavaApp-Docker.git', branch: 'main'
+            }
+        }
+
+        stage('Build Java Application') {
+            steps {
+                dir('JavaAppDocker') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t darshan992/javaappdocker:latest -f JavaAppDocker/Dockerfile ."
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'sanskar2607', passwordVariable: '')]) {
+                        sh "echo  | docker login -u darshan992 --password-stdin"
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh "docker push darshan992/javaappdocker:latest"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                sh 'docker rmi darshan992/javaappdocker:latest || true'
+            }
+        }
+    }
+}
